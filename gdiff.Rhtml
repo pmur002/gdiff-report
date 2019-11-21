@@ -1,0 +1,1287 @@
+<html>
+  <head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <style type="text/css">
+    @media print {
+      body { }
+      p.img { text-align: center; page-break-inside: avoid }
+      img.CC { display: inline }
+    }
+    @media screen {
+      body { max-width: 800px; margin: auto }
+      p.img { text-align: center }
+      img.CC { display: inline }
+    }
+    p.date {
+      font-size: smaller;
+      margin: 0;
+    }
+    p.versionHistory {
+      color: gray
+    }
+    p.versionHistory a {
+      color: gray
+    }
+    p.ref {
+      text-indent: -2em;
+      padding-left: 2em;
+    }
+    img.example {
+      width: 100;
+      height: 100;
+      border: solid 1px;
+      margin-left: 20px;
+      margin-right: 20px;
+    }
+  </style>
+    <title>
+    Visual Testing for Graphics in R
+  </title>
+  </head>
+  <body>
+    <h1>Visual Testing for Graphics in R</h1>
+    <p>
+      <span style="font-style: italic">by Paul Murrell</span>
+      <a href="http://orcid.org">
+        <img alt="" src="https://www.stat.auckland.ac.nz/~paul/ORCID/ORCiD.png" style="width: 16px; height: 16px; vertical-align: middle">
+      </a>
+      <span style="font-family: mono; font-size: small">
+        <a href="http://orcid.org/0000-0002-3224-8858">http://orcid.org/0000-0002-3224-8858</a>
+      </span>
+    </p>
+    <p class="date">
+    Version 1:
+<!--begin.rcode echo=FALSE, results="asis"
+cat(format(Sys.Date(), "%A %d %B %Y"))
+    end.rcode-->
+  </p>
+<!--begin.rcode init, echo=FALSE, message=FALSE, results="hide"
+opts_chunk$set(comment=" ", tidy=FALSE)
+options(width=100)
+## For wonky desktop set up
+options(bitmapType="cairo")
+
+imageConvert <- function(infile, outfile) {
+    imageIn <-  magick::image_read(infile)
+    imageInPNG <- magick::image_convert(imageIn, "png")
+    magick::image_write(imageInPNG, outfile)
+}
+  end.rcode-->
+<!--begin.rcode echo=FALSE
+library(grid)
+  end.rcode-->
+    <hr>
+    <p><a rel="license" href="http://creativecommons.org/licenses/by/4.0/"><img class="CC" alt="Creative Commons License" style="border-width:0" src="https://i.creativecommons.org/l/by/4.0/88x31.png"></a><br><span xmlns:dct="http://purl.org/dc/terms/" property="dct:title">This document</span>
+    by <span xmlns:cc="http://creativecommons.org/ns#" property="cc:attributionName">Paul
+    Murrell</span> is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by/4.0/">Creative
+    Commons Attribution 4.0 International License</a>.
+  </p>
+    <hr>
+    <p>
+    This report describes the 'gdiff' package for R, which 
+    provides tools for performing visual tests on graphical output.
+    Visual testing is essential for checking that code is producing the
+    correct graphical output. The goal of the 'gdiff' package
+    is to support a wide range of testing scenarios, including 
+    testing output between different versions of R.
+  </p>
+    <div>
+      <h2>Table of Contents:</h2>
+      <ul style="list-style: none">
+        <li>
+          <a href="#intro">1. Introduction</a>
+        </li>
+        <li>
+          <a href="#flexibility">2. Flexible generation of graphical output</a>
+        </li>
+        <li>
+          <a href="#tolerance">3. Low expectations of graphical output</a>
+        </li>
+        <li>
+          <a href="#results">4. Comparison results</a>
+        </li>
+        <li>
+          <a href="#gdiffsessions">5. Session information</a>
+        </li>
+        <li>
+          <a href="#internals">6. Extending 'gdiff'</a>
+        </li>
+        <li>
+          <a href="#internals">7. Internal Details</a>
+        </li>
+        <li>
+          <a href="#discussion">8. Discussion</a>
+        </li>
+        <li>
+          <a href="#requirements">9. Technical requirements</a>
+        </li>
+        <li>
+          <a href="#Resources">10. Resources</a>
+        </li>
+        <li>
+          <a href="#references">11. References</a>
+        </li>
+      </ul>
+    </div>
+    <p>
+      <b>NOTE: there are several paths and computing environments 
+    used in code examples in this report that rely on the code
+    being run within a specific Docker container;  see the
+    <a href="#Resources">Resources</a> Section for details.</b>
+    </p>
+    <h2>
+      <a name="intro">1. Introduction</a>
+    </h2>
+    <p>
+    When we test code, we are interested in establishing not only that
+    the code runs without producing errors, but also that the code 
+    produces the desired output.  
+  </p>
+    <p>
+    Testing output 
+    requires a comparison between two sets of output, which we will
+    label "control output" and "test output".
+    When the output from code is graphical, one way that
+    we can compare a control image
+    with a test image is by comparing raster versions of the two images
+    (to see whether any pixels differ).
+  </p>
+    <p>
+    The following code shows a manual example of this process.
+    We draw a control image consisting of the text "same"
+    and a test image consisting of the words "same" and "different".
+  </p>
+<!--begin.rcode echo=FALSE
+unlink("manualControl", recursive=TRUE)
+unlink("manualTest", recursive=TRUE)
+unlink("manualCompare", recursive=TRUE)
+dir.create("manualControl")
+dir.create("manualTest")
+dir.create("manualCompare")
+  end.rcode-->
+<!--begin.rcode results="hide", message=FALSE
+library(grid)
+image1 <- function() {
+    grid.rect()
+    grid.text("same", 1/3, 2/3)
+}
+image2 <- function() {
+    grid.rect()
+    grid.text(c("same", "different"), 1:2/3, 2:1/3)
+}
+## Generate control image
+png("manualControl/control-image.png", width=100, height=100)
+image1()
+dev.off()
+## Generate test image
+png("manualTest/test-image.png", width=100, height=100)
+image2()
+dev.off()
+  end.rcode-->
+    <p>
+    The <code>image_compare</code> function from the
+    'magick' package (<a href="#pkg:magick">Ooms, 2019</a>)
+    produces an image of the difference between
+    the test and control images.
+  </p>
+<!--begin.rcode results="hide", message=FALSE
+library(magick)
+controlImage <- image_read("manualControl/control-image.png")
+testImage <- image_read("manualTest/test-image.png")
+diffImage <- image_compare(controlImage, testImage, metric="AE")
+image_write(diffImage, "manualCompare/diff-image.png")
+  end.rcode-->
+    <p>
+    The images are shown below, with the
+    control image on the left, the test image in the
+    middle, and an image of the differences on the right, 
+    with different pixels highlighted in red (and identical pixels
+    light grey).
+  </p>
+    <p>
+      <img style="margin: 20px" src="manualControl/control-image.png">
+      <img style="margin: 20px" src="manualTest/test-image.png">
+      <img style="margin: 20px" src="manualCompare/diff-image.png">
+    </p>
+    <p>
+    The <code>image_compare</code> function also gives us 
+    a count of the number of different pixels.
+  </p>
+<!--begin.rcode 
+attr(diffImage, "distortion")
+  end.rcode-->
+    <p>
+    This provides us with a test for differences (is the number of 
+    different pixels greater than zero?), plus an image to show 
+    where differences have occurred, which can help us to track down
+    the source of the difference within our code.
+  </p>
+    <p>
+    It is also possible to compare images in other ways.  For example,
+    SVG images are text-based, so a text-based comparison using
+    a tool like GNU <code>diff</code>
+    can be performed.  Another possibility is to reduce image files to
+    a unique "fingerprint", through the use of a hashing function, 
+    and then compare image fingerprints.
+    This report focuses on pixel-based comparisons, but that is not a
+    critical feature of the approach that we have taken.
+  </p>
+    <p>
+    This report describes the 'gdiff' package (<a href="#pkg:gdiff">Murrell, 2019a</a>)
+    for visual testing of graphics 
+    code.  The 'gdiff' package provides functions for generating control output
+    and test output and for comparing the two.  The following code
+    shows a simple use of the package:  we generate
+    control output from the function <code>image1</code>,
+    test output from the function <code>image2</code>,
+    and compare the two outputs, with the result being a difference
+    that is represented by a comparison image and a pixel difference of 248.
+  </p>
+<!--begin.rcode 
+library(gdiff)    
+  end.rcode-->
+<!--begin.rcode 
+gdiff(list(control=image1, test=image2), "image")
+  end.rcode-->
+    <p>
+    There are other R packages that perform visual testing,
+    such as 'graphicsQC'
+    (<a href="#pkg:graphicsQC">Murrell and Gardiner, 2009</a>),
+    'vdiffr'
+    (<a href="#pkg:vdiffr">Henry et al., 2019</a>),
+    'vtest'
+    (<a href="#pkg:vtest">Chang, 2019</a>),
+    and 'visualTest'
+    (<a href="#pkg:visualTest"></a>),
+    but the aim of the 'gdiff' package is to support a broader range
+    of testing scenarios than any of those packages.
+    A detailed comparison of 'gdiff' with other R packages will be made
+    later in the <a href="#discussion">Discussion</a> Section, once we have seen
+    how the 'gdiff' package works and once we have seen some examples
+    of its use.
+  </p>
+    <p>
+    The 'gdiff' package supports a wide variety of testing scenarios in two
+    ways:  it provides flexibility in the ways that graphical output
+    can be generated;
+    and it has low expectations about the type of graphical output that
+    it will perform comparisons on.  The 'gdiff' package also provides
+    the result of comparisons in a very simple format, which
+    makes it easy to build upon.
+  </p>
+    <p>
+    The following sections demonstrate these three aspects of the
+    'gdiff' package and give examples of use for the main functions 
+    in the package.
+  </p>
+    <h2>
+      <a name="flexibility">2. Flexible generation of graphical output</a>
+    </h2>
+    <p>
+    The <code>gdiffOutput</code> function can be used to 
+    generate graphical output, for either control images or test images.
+    The first argument to this function is a function (with no arguments)
+    that will generate graphical
+    output and the second argument is a directory where image files
+    will be generated.  The following code defines a simple
+    function, <code>f</code>, that generates a single plot and
+    the output from that function is generated in a single
+    file in a directory called <code>"Control"</code>.  The result
+    is a character vector of the files that were generated.
+  </p>
+<!--begin.rcode 
+library(gdiff)
+  end.rcode-->
+<!--begin.rcode 
+f <- function() plot(1)
+gdiffOutput(f, "Control")
+  end.rcode-->
+    <p>
+    By default the name of the output file is generated by deparsing the
+    first argument - in this case, <code>f</code> becomes <code>"f"</code> -
+    but it is also possible to specify a <code>name</code> for the output
+    file in the call
+    to <code>gdiffOutput</code>.
+    In the code below, we change the name used for the output file to 
+    <code>"fun"</code>.  A numeric suffix is also appended automatically.
+  </p>
+<!--begin.rcode 
+gdiffOutput(f, "Control", name="fun")
+  end.rcode-->
+    <p>
+    If the function that we give to <code>gdiffOutput</code>
+    generates several plots, the result will be 
+    multiple files.   The example below generates two plots in
+    two separate files.  This demonstrates why the numeric suffix
+    is always appended to the output file names.
+  </p>
+<!--begin.rcode 
+g <- function() { 
+    plot(1)
+    plot(2)
+}
+gdiffOutput(g, "Control")
+  end.rcode-->
+    <p>
+    The function that draws plots is called with no arguments, so
+    the function must use data that is always available.  In the 
+    example below, the function <code>h</code> makes use of the
+    <code>datasets::mtcars</code> data set.
+  </p>
+<!--begin.rcode 
+h <- function() {
+    with(datasets::mtcars,
+         plot(lm(mpg ~ disp)))
+}
+gdiffOutput(h, "Control")
+  end.rcode-->
+    <p>
+    The example in the code below uses a closure to define a function
+    with the required data stored in the function's environment.
+  </p>
+<!--begin.rcode 
+fungen <- function(x) {
+    function() plot(x)
+}
+k <- fungen(1:10)
+gdiffOutput(k, "Control")
+  end.rcode-->
+    <p>
+    By default, the directory in which to generate output files
+    is created if it does not exist and emptied if it does exist.
+  </p>
+    <p>
+    Specifying <code>clean=FALSE</code> means that an existing
+    output directory will not be emptied.  However, this is not allowed
+    if the directory already contains 'gdiff' output.
+    The code below attempts to add output to the "Control" directory
+    without cleaning it first, but the directory already contains
+    'gdiff' output, so we get an error.
+  </p>
+<!--begin.rcode 
+gdiffOutput(f, "Control", clean=FALSE)
+  end.rcode-->
+    <p>
+    We will see an example <a href="#metapost">later</a>
+    where specifying <code>clean=FALSE</code>
+    can be useful.
+  </p>
+    <h3>Graphics devices</h3>
+    <p>
+    By default, output is generated on a PNG 
+    graphics device, but the <code>device</code> argument to the 
+    <code>gdiffOutput</code> function can be
+    used to select a different graphics device.  This expands
+    the range of testing scenarios to include different graphics devices.
+    The options
+    are currently 
+    <code>pngDevice()</code>,
+    <code>pdfDevice()</code>,
+    <code>cario_pdf_device()</code>, and
+    <code>postscriptDevice()</code>.  The following code generates
+    output on a  PDF device.
+  </p>
+<!--begin.rcode 
+gdiffOutput(f, "Control", device=pdfDevice())
+  end.rcode-->
+    <p>
+    The value of the <code>device</code> function can also be a list
+    of devices, in which case output is generated for each device.
+    The following code generates each page of output twice:
+    once on a PNG device and once on a PDF device.
+  </p>
+<!--begin.rcode 
+gdiffOutput(f, "Control", device=list(pngDevice(), pdfDevice()))
+  end.rcode-->
+    <p>
+    The <code>device</code> functions allow arguments to be passed
+    to the graphics device, for example to control the size or resolution
+    of the device.  We will see some examples later.
+  </p>
+    <h3>R sessions</h3>
+    <p>
+    Output is generated within a "session" of R, which
+    by default is the current R session.  The following code makes that
+    explicit.
+  </p>
+<!--begin.rcode 
+gdiffOutput(f, "Control", session=currentSession())
+  end.rcode-->
+    <p>
+    The <code>libPaths</code> argument to the <code>currentSession</code>
+    function can be specified to 
+    add a directory from which packages will be loaded when generating
+    output.  This expands the range of testing scenarios to
+    allow the same code to be tested on different
+    versions of a package (and its dependencies).
+  </p>
+    <p>
+    The following code installs two different versions of the
+    'grImport' package (<a href="#pkg:grImport">Murrell, 2009</a>)
+    into two different directories.
+  </p>
+<!--begin.rcode eval=FALSE, echo=FALSE
+## To avoid "cannot open file 'startup.Rs'" error ?
+## https://github.com/r-lib/testthat/issues/144
+Sys.setenv("R_TESTS" = "")
+  end.rcode-->
+<!--begin.rcode 
+oldPkgDir <- file.path(tempdir(), "oldPackages")
+dir.create(oldPkgDir)
+newPkgDir <- file.path(tempdir(), "newPackages")
+dir.create(newPkgDir)
+install.packages("grImport_0.9-1.tar.gz", repos=NULL, lib=oldPkgDir)
+install.packages("grImport_0.9-2.tar.gz", repos=NULL, lib=newPkgDir)
+  end.rcode-->
+    <p>
+    We can now generate control output based on one version of 'grImport'
+    and test output based on the other version of 'grImport'.
+    The resulting images are displayed in each case
+    to show that they are different.
+  </p>
+<!--begin.rcode message=FALSE
+grImport <- function() {
+    ## grImport_0.9-2 added ability to import 'skewed' pictures
+    library(grImport)
+    PostScriptTrace("transform.ps", "transform.xml")
+    img <- readPicture("transform.xml")
+    grid.picture(img)
+    detach("package:grImport")
+}
+gdiffOutput(grImport, dir="Control", session=currentSession(libPaths=oldPkgDir))
+  end.rcode-->
+<!--begin.rcode echo=FALSE, fig.width=3, fig.height=3
+library(png)
+img <- readPNG("Control/grImport-001.png")
+grid.raster(img)
+  end.rcode-->
+<!--begin.rcode message=FALSE
+gdiffOutput(grImport, dir="Test", session=currentSession(libPaths=newPkgDir))
+  end.rcode-->
+<!--begin.rcode echo=FALSE, fig.width=3, fig.height=3
+library(png)
+img <- readPNG("Test/grImport-001.png")
+grid.raster(img)
+  end.rcode-->
+    <p>
+    We can generate output within a separate R session with the
+    <code>localSession</code> function.  The following code
+    repeats the 'grImport' example, but uses a separate R session
+    to generate both control and test output.
+    Notice that the test
+    function <code>grImport</code> now no longer needs to <code>detach</code>
+    the 'grImport' package (because the package is loaded within a 
+    separate R session).
+  </p>
+<!--begin.rcode message=FALSE
+grImport <- function() {
+    ## grImport_0.9-2 added ability to import 'skewed' pictures
+    library(grImport)
+    PostScriptTrace("transform.ps", "transform.xml")
+    img <- readPicture("transform.xml")
+    grid.picture(img)
+}
+gdiffOutput(grImport, dir="Control", session=localSession(libPaths=oldPkgDir))
+gdiffOutput(grImport, dir="Test", session=localSession(libPaths=newPkgDir))
+  end.rcode-->
+    <p>
+    The <code>localSession</code> function also has an
+    <code>Rpath</code> argument so that we can generate output within
+    a separate R session using a different version of R.
+    This expands the range of testing scenarios to include
+    comparisons between different versions of R.
+  </p>
+    <p>
+    The following code generates output from the <code>axis</code>
+    help page examples using a separate R session running
+    R version 3.5.3 for control output and 
+    the current R session, which is 
+    R version 3.6.1, for test output.  The test output generates
+    an extra file of output because an extra example was added to
+    the <code>axis</code> help page in R version 3.6.0.
+  </p>
+<!--begin.rcode 
+f <- function() {
+    ## R 3.6.0 introduced 'gap.axis' argument to axis(), with example
+    example(axis, setRNG=TRUE, echo=FALSE, ask=FALSE)
+}
+## Allow for different R versions to correspond
+Sys.setenv("R_DEFAULT_SAVE_VERSION"=2,
+           "R_DEFAULT_SERIALIZE_VERSION"=2)
+## R session running R 3.5
+gdiffOutput(f, "Control",
+            session=localSession(Rpath="/home/R/R-3.5.3/bin/Rscript"),
+            device=pngDevice(type="cairo"))
+## Current session running R 3.6
+gdiffOutput(f, "Test")
+  end.rcode-->
+    <p>
+    There is also a <code>remoteSession</code> function and
+    a <code>dockerSession</code> function so that we can generate output on
+    different platforms.  The <code>remoteSession</code> function requires
+    either a <code>host</code> name (and possibly a <code>user</code>) or
+    a <code>"cluster"</code> object 
+    (as generated by <code>parallel::makeCluster</code>) and the
+    <code>dockerSession</code> function requires the name of a docker
+    image.
+    In both cases, the <code>libPaths</code>
+    and the <code>Rpath</code> can also be set.
+    This expands the range of testing scenarios to include
+    comparisons between different operating system platforms
+    and interactions between package versions, R versions, and
+    operating system platforms.
+  </p>
+    <p>
+    The following code repeats the <code>axis</code> example,
+    but this time we generate the test output in a docker container
+    that has R version 3.6.1 installed.
+  </p>
+<!--begin.rcode message=FALSE
+## Docker session has R 3.6 installed
+gdiffOutput(f, "Control", 
+            session=localSession(Rpath="/home/R/R-3.5.3/bin/Rscript"),
+            device=pngDevice(type="cairo"))
+## R session running R 3.5
+gdiffOutput(f, "Test", session=dockerSession("pmur002/gdiff-test"))
+  end.rcode-->
+    <p>
+    This sort of "remote" output generation requires some set up, for example
+    the 'gdiff' package at least must be installed on the remote
+    system or the docker image, and of course R itself must also be installed.
+  </p>
+    <p>
+    There are two other high-level functions for generating 
+    graphical output.
+    The <code>gdiffExamplesOutput()</code> function
+    generates output from the examples section
+    of the specified function (either a function name or a function object).
+    The following code generates 4 files of output from the examples 
+    on the help page for the <code>plot</code> function.
+  </p>
+<!--begin.rcode 
+gdiffExamplesOutput("plot", "Control")
+  end.rcode-->
+    <p>
+    The <code>gdiffPackageOutput()</code> function
+    generates output from all examples sections of all exported 
+    functions in a package.  The following code generates 10 files
+    of output by running all of the examples in the 'gridBezier' package.
+  </p>
+<!--begin.rcode 
+gdiffPackageOutput("gridBezier", "Control")
+  end.rcode-->
+    <h2>
+      <a name="tolerance">3. Low expectations of graphical output</a>
+    </h2>
+    <p>
+    The previous section demonstrated the flexibility that the
+    'gdiff' package provides for generating graphical output.
+    This section looks at how we can compare two sets of output.
+    We will see that the low expectation that 'gdiff' has 
+    for graphical output files further expands the range
+    of testing scenarios that are supported.
+  </p>
+    <p>
+    The 'gdiff' package performs comparisons of control and test images
+    based on the following assumptions:
+  </p>
+    <ol>
+      <li>
+      Control images are in a separate directory from test images.
+    </li>
+      <li>
+      Images to be compared have the same name (but are in different 
+      directories as per assumption 1).
+    </li>
+      <li>
+      The control and test directories only contain image files to
+      be compared.
+    </li>
+      <li>
+      Images are the same if PNG versions of the image are identical
+      based on per-pixel comparison.
+    </li>
+    </ol>
+    <p>
+    Given existing test and control output,
+    the <code>gdiffCompare</code> function can be used to
+    compare two sets of output.  We just have to name the
+    directory that contains the control output, the directory
+    that contains the test output, and the directory to use 
+    for any comparison output.
+  </p>
+    <p>
+    The following code creates a single control output file and 
+    a single test output file, both based on the same function, but with
+    control output generated by R version 3.5.3 and test output 
+    generated by R version 3.6.1.
+  </p>
+<!--begin.rcode 
+f <- function() plot(1)
+gdiffOutput(f, "Control",
+            session=localSession(Rpath="/home/R/R-3.5.3/bin/Rscript"),
+            device=pngDevice(type="cairo"))
+gdiffOutput(f, "Test")
+  end.rcode-->
+    <p>
+    The following call to <code>gdiffCompare</code> compares the
+    two output files and reports that they are identical
+    (so the output from <code>plot(1)</code> has not changed from
+    R version 3.5.3 to R version 3.6.1).
+  </p>
+<!--begin.rcode 
+gdiffCompare("Control", "Test", "Compare")
+  end.rcode-->
+    <p>
+    Comparisons are performed on PNG output, so if the output files 
+    are not PNG files, they are converted to PNG format for comparison
+    (using <code>magick::image_convert</code>).
+  </p>
+    <p>
+    There is also a <code>gdiff</code> function, which can be used
+    to generate output and perform the comparison in one go.  By default,
+    this function uses the names <code>"Control"</code>,
+    <code>"Test"</code>, and <code>"Compare"</code> for the three
+    directories.  Many of 
+    the examples in this section will use <code>gdiff</code>
+    because it makes it easier to set up
+    the output that we want to compare.
+  </p>
+<!--begin.rcode 
+gdiff(f)
+  end.rcode-->
+    <p>
+    The example above shows one of the possible outcomes of a comparison:
+    the output files are identical.  Another very simple case is 
+    when the files differ.  This example demonstrates that 
+    the <code>session</code> argument to <code>gdiff</code> can be
+    a named list of sessions, one for generating control output 
+    and one for generating test output.
+  </p>
+<!--begin.rcode 
+    gdiff(grImport, 
+          session=list(control=localSession(libPaths=oldPkgDir),
+                       test=localSession(libPaths=newPkgDir)))
+  end.rcode-->
+    <p>
+    A third (and fourth) possible case can arise when a control output file
+    has no corresponding test output file (or vice versa).
+    The following code demonstrates the comparison result in this
+    situation.  This example shows that the first argument to 
+    <code>gdiff</code> can also be a list of functions, one for 
+    generating control output and one for test output.  It is also
+    possible to specify <code>NULL</code>, in which case no output
+    is generated (and the output directory is not cleaned).
+  </p>
+<!--begin.rcode 
+gdiff(list(control=f, test=NULL), name="f")
+  end.rcode-->
+    <p>
+    The following code shows a more realistic scenario:
+    we check the output from the <code>axis</code> function
+    between R versions 3.5 and 3.6 to show that all output remained
+    the same, but there is an additional example in R 3.6.
+  </p>
+<!--begin.rcode 
+gdiffExamples("axis",
+              session=list(control=currentSession(),
+                           test=localSession(Rpath="/home/R/R-3.5.3/bin/Rscript")),
+              device=pngDevice(type="cairo"))
+  end.rcode-->
+    <p>
+    The above examples demonstrate that <code>gdiff</code>
+    (and <code>gdiffCompare</code>) support all of the testing scenarios
+    that were described in the previous section on generating graphical
+    output.  The next examples make use of the fact that files to
+    be compared just have to have the same name (but reside in 
+    different directories) to support some additional testing 
+    scenarios.
+  </p>
+    <p>
+    The following code shows that we can use different R functions
+    to generate output, but use the same name for the output files.
+    In this case, we compare the <code>grid::grid.bezier</code>
+    function with the <code>gridBezier::grid.Bezier</code> function.
+  </p>
+<!--begin.rcode 
+x <- c(0, 0.5, 1, 0.5)
+y <- c(0.5, 1, 0.5, 0)
+f1 <- function() { grid::grid.bezier(x, y) }
+f2 <- function() { gridBezier::grid.Bezier(x, y) }
+gdiff(list(control=f1, test=f2), name="bezier")
+  end.rcode-->
+<!--begin.rcode echo=FALSE
+result <- gdiff(list(control=f1, test=f2), name="bezier",
+                controlDir="bezierControl", testDir="bezierTest",
+                compareDir="bezierCompare")
+  end.rcode-->
+    <p>
+    The images that were generated by the code above are shown below,
+    in the order control, test, and comparison.
+  </p>
+    <p>
+      <img src="bezierControl/bezier-001.png" class="example">
+      <img src="bezierTest/bezier-001.png" class="example">
+      <img src="bezierCompare/bezier-001.png.png" class="example">
+    </p>
+    <p>
+    The following code uses the same approach (controlling the names
+    of output files) to compare output from
+    two different graphics devices, <code>pdf</code> versus 
+    <code>cairo_pdf</code>.
+  </p>
+<!--begin.rcode 
+gdiff(f, 
+      device=list(control=pdfDevice(), 
+                  test=cairo_pdf_device(suffix=".pdf")))
+  end.rcode-->
+<!--begin.rcode echo=FALSE
+result <- gdiff(f, 
+                device=list(control=pdfDevice(), 
+                            test=cairo_pdf_device(suffix=".pdf")),
+                controlDir="deviceControl", testDir="deviceTest",
+                compareDir="deviceCompare")
+imageConvert("deviceControl/f-001.pdf", "deviceControl/f-001.png")
+imageConvert("deviceTest/f-001.pdf", "deviceTest/f-001.png")
+  end.rcode-->
+    <p>
+      <img src="deviceControl/f-001.png" class="example">
+      <img src="deviceTest/f-001.png" class="example">
+      <img src="deviceCompare/f-001.pdf.png" class="example">
+    </p>
+    <p><a name="metapost">The next example</a> 
+    demonstrates that we do not even
+    require the control or test output to be generated by R.
+    Here we compare the output generated by MetaPost 
+    (<a href="#MetaPost">Hobby and the MetaPost development team, 2018</a>)
+    with the output generated by the 'metapost' R package 
+    (<a href="#pkg:metapost">Murrell, 2019b</a>).
+    This example involves multiple steps:
+    we generate MetaPost output manually and convert that output
+    to a PDF format with a specific name in a specific directory;
+    then we call
+    <code>gdiff</code> with <code>list(control=NULL, test=f)</code> 
+    so that we do not
+    generate any control output, <code>controlDir=MetaPostControl</code> to
+    specify where the control output is located,
+    <code>clean=list(control=FALSE, test=TRUE,
+    compare=TRUE)</code> so that we do not clean the control directory,
+    and the comparison occurs between the manually-generated PDF and
+    the PDF that gets generated by <code>f</code>.
+  </p>
+<!--begin.rcode message=FALSE
+library(metapost)
+options(metapost.units="in")
+scurve <- knot(0, 0) + dir(0) + dir(0) + knot(1, 1)
+metapost(scurve, "scurve.mp")
+mpost("scurve.mp", template="%j.ps")
+MetaPostDir <- "MetaPostControl"
+dir.create(MetaPostDir, showWarnings=FALSE)
+system(paste0("gs -o ", file.path(MetaPostDir, "scurve-001.pdf"),
+              " -sDEVICE=pdfwrite -g720x720 -dPDFFitPage scurve.ps "))
+f <- function() {
+    grid.metapost(scurve)
+}
+gdiff(list(control=NULL, test=f),
+      name="scurve",
+      controlDir=MetaPostDir,
+      device=pdfDevice(width=1, height=1),
+      clean=list(control=FALSE, test=TRUE, compare=TRUE))
+  end.rcode-->
+<!--begin.rcode echo=FALSE
+result <- gdiff(list(control=NULL, test=f),
+                name="scurve",
+                device=pdfDevice(width=1, height=1),
+                clean=list(control=FALSE, test=TRUE, compare=TRUE),
+                controlDir="MetaPostControl", testDir="MetaPostTest",
+                compareDir="MetaPostCompare")
+imageConvert("MetaPostControl/scurve-001.pdf", "MetaPostControl/scurve-001.png")
+imageConvert("MetaPostTest/scurve-001.pdf", "MetaPostTest/scurve-001.png")
+  end.rcode-->
+    <p>
+      <img src="MetaPostControl/scurve-001.png" class="example">
+      <img src="MetaPostTest/scurve-001.png" class="example">
+      <img src="MetaPostCompare/scurve-001.pdf.png" class="example">
+    </p>
+    <p>
+    In this final comparison example, we show that, 
+    although it is not possible to add output to a directory that
+    already contains 'gdiff' output, we can generate output in
+    more than one directory and perform a comparison based on
+    multiple control and/or test directories.
+  </p>
+<!--begin.rcode 
+f <- function() plot(1)
+g <- function() { 
+    plot(1)
+    plot(2)
+}
+gdiffOutput(f, "Control1")
+gdiffOutput(g, "Control2")
+gdiffOutput(f, "Test1")
+gdiffOutput(g, "Test2")
+gdiffCompare(c("Control1", "Control2"), c("Test1", "Test2"), "Compare")
+  end.rcode-->
+    <h2>
+      <a name="results">4. Comparison results</a>
+    </h2>
+    <p>
+    This section describes the structure of the results from
+    a 'gdiff' comparison.  
+  </p>
+    <p>
+    The return value from <code>gdiff</code> (and 
+    <code>gdiffCompare</code>) is a list with class 
+    <code>"gdiffComparison"</code>.  The 'gdiff'
+    package provides a <code>print</code> method for this class
+    that produces a simple summary of the comparison results.
+  </p>
+<!--begin.rcode 
+result <- gdiffExamples("axis",
+                        session=list(control=currentSession(),
+                                     test=localSession(Rpath="/home/R/R-3.5.3/bin/Rscript")),
+                        device=pngDevice(type="cairo"))
+result
+  end.rcode-->
+    <p>
+    The <code>details</code> argument can be used to 
+    simplify the results output even further, which may be useful
+    when a large number of images are being compared.
+  </p>
+<!--begin.rcode 
+print(result, detail=FALSE)
+  end.rcode-->
+    <p>
+    A <code>"gdiffComparison"</code> is a simple list so it is easy
+    to present the results of a comparison in other ways.
+    For example, the following code embeds the control, test, and
+    difference images from a comparison within HTML tags for
+    inclusion in a web report.
+  </p>
+<!--begin.rcode 
+f <- function() plot(1)
+g <- function() plot(2)
+  end.rcode-->
+<!--begin.rcode eval=FALSE
+result <- gdiff(list(control=f, test=g), name="plot")
+cat(sapply(result[1:3], function(x) paste0("<img src='", x, "'>")))
+  end.rcode-->
+<!--begin.rcode echo=FALSE, results="asis"
+result <- gdiff(list(control=f, test=g), name="plot",
+                controlDir="customControl", testDir="customTest",
+                compareDir="customCompare")
+cat(sapply(result[1:3], 
+           function(x) paste0("<img style='width: 200' src='", x, "'>")))
+  end.rcode-->
+    <h2>
+      <a name="gdiffsessions">5. Session information</a>
+    </h2>
+    <p>
+    When we generate output, the 'gdiff' package creates a
+    <code>.gdiffSession</code> file in the output directory
+    that contains information about the R session that was
+    used to generate the output.
+    When we perform a comparison, this information is read in
+    and included in the comparison result.
+    For the comparison we just performed above, the control output
+    was not generated by R at all, so there is no information
+    about the R session;  the test output was generated by
+    R 3.6.1.
+  </p>
+<!--begin.rcode 
+result$controlInfo
+result$testInfo
+  end.rcode-->
+    <h2>
+      <a name="internals">6. Extending 'gdiff'</a>
+    </h2>
+    <p>
+    We can generate control and test output on a range of devices
+    by specifying different values for the <code>device</code> 
+    argument to the various 'gdiff' functions.  A few common graphics
+    devices are already support (e.g., PNG and PDF), but the range
+    can easily be expanded by defining support for a new graphics device.
+  </p>
+    <p>
+    The main device function should call the <code>gdiffDevice</code> 
+    to define a new 
+    output device.  This function takes a <code>name</code> for the 
+    device, a <code>suffix</code> (which defaults to the <code>name</code>)
+    to be used on output files generated by the device, and two
+    functions, <code>open</code> and <code>close</code>.
+    The <code>open</code> function takes a <code>name</code> argument
+    that should be used to generate file names for output files;  this
+    function should open a graphics device.
+    The <code>close</code> function defaults to a call to <code>dev.off</code>.
+  </p>
+    <p>
+    The code below shows the definition of an SVG device.  The predefined
+    output devices in the 'gdiff' package provide other examples.
+  </p>
+<!--begin.rcode 
+svgDevice <- function(...) {
+    gdiffDevice("svg",
+                open=function(name) {
+                    svg(paste0(name, "-%03d.svg"), ...)
+                })
+}
+  end.rcode-->
+<!--begin.rcode 
+f <- function() plot(1)
+gdiff(f, device=svgDevice())
+  end.rcode-->
+    <p>
+    It is also possible to define a new type of 'gdiff' session.
+    The main session function should call the <code>gdiffSession</code>
+    function to generate an R object representing the session.
+    A <code>generateOutput</code> method should then be written
+    for that class of R object.  This function is responsible for
+    generating output files;  it will typically perform
+    some set up steps and clean up steps and call 
+    <code>gdiffGenerateOutput</code> to generate the output files.
+    The predefined sessions in 'gdiff' provide a range of examples.
+  </p>
+    <h2>
+      <a name="internals">7. Internal Details</a>
+    </h2>
+    <p>
+    This section describes some important internal design 
+    details of the 'gdiff' package.  This is to help future
+    authors with further development of the package, possibly
+    including the original package author's future self.
+  </p>
+    <p>
+    The public functions in 'gdiff' that generate output files
+    and compare output files are all based on a core function
+    called <code>gdiffCore</code>.  This function can generate control
+    output, generate test output, 
+    and perform comparisons, or any subset of those operations.
+    The argument list to <code>gdiffCore</code> is basically a 
+    superset of the arguments to the public functions that generate
+    output or perform comparisons, <em>except</em> for the
+    <em>first</em> argument.
+  </p>
+    <p>
+    The first argument to <code>gdiffCore</code>, called <code>codeFun</code>,
+    is a "function
+    generator".  This is a function that creates a named list of functions.
+    This function generator is passed, via the <code>generateOutput</code>
+    method for the 'gdiff' session,
+    all the way in to <code>gdiffGenerateOutput</code>.  There it is called
+    to generate a named list of functions and then each function is called
+    on each graphics device to generate output files.
+  </p>
+    <p>
+    A simple example of a function generator is the one used by 
+    <code>function</code> methods of <code>gdiff</code> and
+    <code>gdiffOutput</code>.  These just take the function argument
+    provided and store it in a list, with the appropriate name.
+  </p>
+    <p>
+    A more complex function generator example is the one used by
+    <code>gdiffPackage</code> and <code>gdiffPackageOutput</code>.
+    This involves generating a list of functions based off the list
+    of exported symbols for a given package.  For each exported
+    symbol we generate a function that essentially calls the
+    <code>example</code> function.
+  </p>
+    <h2>
+      <a name="discussion">8. Discussion</a>
+    </h2>
+    <p>
+    The 'gdiff' package provides tools for detecting changes
+    in graphical output, but 
+    this sort of testing is also provided by several other R packages,
+    including 'graphicsQC', 'vdiffr', and 'vtest'.
+  </p>
+    <p>
+    One motivation for the 'gdiff' package was to create a simpler
+    version of 'graphicsQC'.  In particular, 'gdiff' has a much simpler
+    design for keeping track of the list of output files that 
+    have been generated and the results of comparisons.  This allows
+    the 'gdiff' package to be more flexible in terms of the testing
+    scenarios that are supported and makes 'gdiff' easier to extend.
+  </p>
+    <p>
+    The 'vdiffr' package integrates with the 'testthat' package
+    (<a href="#pkg:testthat"></a>)
+    to add visual testing.
+    The 'gdiff' package supports a wider range of testing scenarios
+    than 'vdiffr', including comparing between R versions, and 'gdiff'
+    is more independent of the testing framework.  This likely
+    makes it harder to integrate with 'testthat', but makes
+    is easier to use in other contexts.
+    The 'gdiff' package also supports multiple graphics devices, while
+    'vdiffr' is focused on the SVG format.
+  </p>
+    <p>
+    The 'gdiff' package is very much focused on detecting differences
+    between output files, but has nothing to say about which
+    of two different images is the correct one.  The 'vdiffr' package 
+    provides support for validating images and keeping track of 
+    "model" images that have been verified as correct.
+    The 'vdiffr' package also provides some useful details
+    like platform-independent fonts and provides multiple ways
+    to view the differences between images.
+  </p>
+    <p>
+    The 'vtest' package is similar to 'gdiff' in that it compares
+    raster versions of images, though it takes a very different
+    approach to tracking output files and performing comparisons.
+    The main limitation of the 'vtest' package compared to 'gdiff'
+    is that it appears to
+    only work with 'ggplot2' images and PDF output.
+  </p>
+    <h3>
+      <a name="check">Integration with R CMD check</a>
+    </h3>
+    <p>
+    The 'gdiff' package could be used with <code>R CMD check</code> 
+    by generating a set of control images within the package, then
+    running tests that generate test images and compare them with 
+    the control images.
+  </p>
+    <p>
+    However <code>R CMD check</code>
+    is just one testing scenario (where we generate results from
+    one version of R and one version of a package against output
+    that was generated with previous version of a package and some
+    unknown version of R).  The 'gdiff' package aims to support a
+    wider range of testing scenarios.
+  </p>
+    <h3>Future work</h3>
+    <p>
+    It would be useful to support some of the nice features
+    from 'vdiffr' within 'gdiff'.  In particular, it would be useful 
+    to make use of
+    cross-platform fonts to avoid spurious differences arising
+    between different operating system platforms.
+  </p>
+    <p>
+    It would also be useful to expand the convenience functions
+    for generating output.  For example, we could add a function
+    to generate output from the <code>tests/</code> directory
+    within a package.
+  </p>
+    <h2>
+      <a name="requirements">9. Technical requirements</a>
+    </h2>
+    <p>
+    The examples and discussion in this report relate to <a href="https://github.com/pmur002/gdiff/releases/tag/v0.1-0">version
+    0.1-0</a> of the 'gdiff' package.
+  </p>
+    <p>
+    This report was generated within a Docker container
+    (see <a href="#Resources">Resources</a> section below).
+  </p>
+    <h2>
+      <a name="Resources">10. Resources</a>
+    </h2>
+    <ul>
+      <li>
+      The <a href="gdiff.cml">raw source file</a> for this
+      report, a <a href="gdiff.xml">valid XML</a>
+      transformation of the source file, a <a href="gdiff.Rhtml">'knitr' document</a> generated from
+      the XML file, 
+      two <a href="toc.R">R</a> <a href="bib.R">files</a> and
+      the <a href="gdiff.bib">bibtex file</a>
+      that are used to generate the table of contents and reference sections,
+      two <a href="common.xsl">XSL</a> <a href="knitr.xsl">files</a> and an 
+      <a href="knit.R">R file</a> that are used to transform the XML to
+      the 'knitr' document, and a <a href="Makefile">Makefile</a> that
+      contains code for the other transformations and coordinates
+      everything.  
+      These materials are also available
+      on <a href="https://github.com/pmur002/gdiff-report/releases/tag/v2">github</a>.
+    </li>
+      <li>
+      This report was generated within a 
+      <a href="https://www.docker.com/">Docker</a> container.
+      The Docker command to build the report is included in the Makefile above.
+      The Docker image for the container is available from
+      <a href="https://hub.docker.com/r/pmur002/gdiff-report/">Docker Hub</a>;
+      alternatively, the image can be rebuilt from its 
+      <a href="Dockerfile-gdiff-report">Dockerfile</a>.
+    </li>
+      <li>
+      The <code>dockerSession</code> example made use of a 
+      Docker image that is available from 
+      <a href="https://hub.docker.com/r/pmur002/gdiff-test/">Docker Hub</a>
+      or via its 
+      <a href="Dockerfile-gdiff-test">Dockerfile</a>.
+    </li>
+    </ul>
+    <h2>How to cite this report</h2>
+    <p>
+    Murrell, P. (2019). "Visual Testing for Graphics in R" 
+    Technical Report 2019-??, Department of Statistics, The University of Auckland. 
+    Version 1.
+    [ <a href="how-to-cite.bib">bib</a> |
+      <a href="http://dx.doi.org/">DOI</a> | 
+      <a href="https://stattech.wordpress.fos.auckland.ac.nz/2019/">http</a> ]
+  </p>
+    <h2>
+      <a name="references">11. References</a>
+    </h2>
+    <dl>
+<dt>
+[<a name="pkg:visualTest">Campbell and Csardi, 2019</a>]
+</dt>
+<dd>
+Campbell, C. and Csardi, G. (2019).
+ <em>Perform Fuzzy Image Matching</em>.
+ https://github.com/MangoTheCat/visualTest.
+[ <a href="gdiff-bib_bib.html#pkg:visualTest">bib</a> ]
+
+</dd>
+
+
+<dt>
+[<a name="pkg:vtest">Chang, 2019</a>]
+</dt>
+<dd>
+Chang, W. (2019).
+ <em>vtest: Tools for visual testing of R packages</em>.
+ R package version 0.0.3.
+[ <a href="gdiff-bib_bib.html#pkg:vtest">bib</a> ]
+
+</dd>
+
+
+<dt>
+[<a name="pkg:vdiffr">Henry et al., 2019</a>]
+</dt>
+<dd>
+Henry, L., Sutherland, C., Hong, D., Luciani, T. J., Decorde, M., and Lise, V.
+  (2019).
+ <em>vdiffr: Visual Regression Testing and Graphical Diffing</em>.
+ R package version 0.3.1.
+[ <a href="gdiff-bib_bib.html#pkg:vdiffr">bib</a> | 
+<a href="https://CRAN.R-project.org/package=vdiffr">http</a> ]
+
+</dd>
+
+
+<dt>
+[<a name="MetaPost">Hobby and the MetaPost development team, 2018</a>]
+</dt>
+<dd>
+Hobby, J. D. and the MetaPost development team (2018).
+ <em>METAPOST a user's manual</em>.
+[ <a href="gdiff-bib_bib.html#MetaPost">bib</a> | 
+<a href="http://www.tug.org/docs/metapost/mpman.pdf">.pdf</a> ]
+
+</dd>
+
+
+<dt>
+[<a name="pkg:Sxslt">Lang, 2019</a>]
+</dt>
+<dd>
+Lang, D. T. (2019).
+ <em>Sxslt: R interface to libxslt</em>.
+ http://www.omegahat.org/Sxslt, http://www.omegahat.org.
+[ <a href="gdiff-bib_bib.html#pkg:Sxslt">bib</a> ]
+
+</dd>
+
+
+<dt>
+[<a name="pkg:grImport">Murrell, 2009</a>]
+</dt>
+<dd>
+Murrell, P. (2009).
+ Importing vector graphics: The grImport package for R.
+ <em>Journal of Statistical Software</em>, 30(4):1--37.
+[ <a href="gdiff-bib_bib.html#pkg:grImport">bib</a> | 
+<a href="http://www.jstatsoft.org/v30/i04/">http</a> ]
+
+</dd>
+
+
+<dt>
+[<a name="pkg:gdiff">Murrell, 2019a</a>]
+</dt>
+<dd>
+Murrell, P. (2019a).
+ <em>gdiff: Graphical Difference Testing</em>.
+ R package version 0.1-0.
+[ <a href="gdiff-bib_bib.html#pkg:gdiff">bib</a> | 
+<a href="https://github.com/pmur002/">http</a> ]
+
+</dd>
+
+
+<dt>
+[<a name="pkg:metapost">Murrell, 2019b</a>]
+</dt>
+<dd>
+Murrell, P. (2019b).
+ <em>metapost: Interface to 'MetaPost'</em>.
+ R package version 1.0-6.
+[ <a href="gdiff-bib_bib.html#pkg:metapost">bib</a> | 
+<a href="https://CRAN.R-project.org/package=metapost">http</a> ]
+
+</dd>
+
+
+<dt>
+[<a name="pkg:graphicsQC">Murrell and Gardiner, 2009</a>]
+</dt>
+<dd>
+Murrell, P. and Gardiner, S. (2009).
+ Quality control for statistical graphics: The graphicsQC package
+  for R.
+ <em>Journal of Statistical Software</em>, 30(1):1--28.
+[ <a href="gdiff-bib_bib.html#pkg:graphicsQC">bib</a> | 
+<a href="http://www.jstatsoft.org/v30/i01/">http</a> ]
+
+</dd>
+
+
+<dt>
+[<a name="pkg:magick">Ooms, 2019</a>]
+</dt>
+<dd>
+Ooms, J. (2019).
+ <em>magick: Advanced Graphics and Image-Processing in R</em>.
+ R package version 2.2.
+[ <a href="gdiff-bib_bib.html#pkg:magick">bib</a> | 
+<a href="https://CRAN.R-project.org/package=magick">http</a> ]
+
+</dd>
+
+
+<dt>
+[<a name="R">R Core Team, 2018</a>]
+</dt>
+<dd>
+R Core Team (2018).
+ <em>R: A Language and Environment for Statistical Computing</em>.
+ R Foundation for Statistical Computing, Vienna, Austria.
+[ <a href="gdiff-bib_bib.html#R">bib</a> | 
+<a href="https://www.R-project.org/">http</a> ]
+
+</dd>
+
+
+<dt>
+[<a name="pkg:testthat">Wickham, 2011</a>]
+</dt>
+<dd>
+Wickham, H. (2011).
+ testthat: Get started with testing.
+ <em>The R Journal</em>, 3:5--10.
+[ <a href="gdiff-bib_bib.html#pkg:testthat">bib</a> | 
+<a href="http://journal.r-project.org/archive/2011-1/RJournal_2011-1_Wickham.pdf">.pdf</a> ]
+
+</dd>
+</dl>
+    <hr>
+    <p><a rel="license" href="http://creativecommons.org/licenses/by/4.0/"><img class="CC" alt="Creative Commons License" style="border-width:0" src="https://i.creativecommons.org/l/by/4.0/88x31.png"></a><br><span xmlns:dct="http://purl.org/dc/terms/" property="dct:title">This document</span>
+    by <span xmlns:cc="http://creativecommons.org/ns#" property="cc:attributionName">Paul
+    Murrell</span> is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by/4.0/">Creative
+    Commons Attribution 4.0 International License</a>.
+  </p>
+  </body>
+</html>

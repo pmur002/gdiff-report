@@ -1,0 +1,19 @@
+
++ Created docker image with (NOTE ONLY lowercase in image tag) ...
+
+  # Bit of setup to get local copies of in-development pacakges
+  # cp ../../Rgdiff/gdiff_0.1-0.tar.gz .
+
+  sudo docker build -f Dockerfiles/Dockerfile-gdiff-test -t pmur002/gdiff-test .
+
++ To test image interactively 
+  (which is useful for testing that various things will run and installing
+   packages interactively before adding them to the Dockerfile) ...
+
+  sudo docker run -v $(pwd):/home/work/ -w /home/work --rm -t -i pmur002/gdiff-test /bin/bash
+
++ To make image available on DockerHub ...
+
+  sudo docker login
+  sudo docker push pmur002/gdiff-test
+

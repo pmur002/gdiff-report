@@ -1,0 +1,72 @@
+# Base image
+FROM ubuntu:16.04
+MAINTAINER Paul Murrell <paul@stat.auckland.ac.nz>
+
+# add CRAN PPA
+RUN apt-get update && apt-get install -y apt-transport-https
+RUN echo 'deb https://cloud.r-project.org/bin/linux/ubuntu xenial-cran35/' > /etc/apt/sources.list.d/cran.list
+RUN apt-key adv --keyserver keyserver.ubuntu.com --recv-keys E084DAB9
+
+# Install additional software
+# R stuff
+RUN apt-get update && apt-get install -y \
+    r-base=3.6* 
+
+# Dependencies for R packages
+RUN apt-get update && apt-get install -y \
+    libmagick++-dev \
+    libcurl4-openssl-dev \
+    libssl-dev \
+    libssh-dev \
+    libxml2-dev 
+
+# Poppler requires a bit more finesse
+RUN apt-get install -y software-properties-common
+RUN add-apt-repository -y ppa:cran/poppler
+RUN apt-get update
+RUN apt-get install -y libpoppler-cpp-dev
+
+# For building the report
+RUN apt-get update && apt-get install -y \
+    xsltproc \
+    bibtex2html 
+RUN Rscript -e 'install.packages(c("knitr", "devtools"), repos="https://cran.rstudio.com/")'
+RUN Rscript -e 'library(devtools); install_version("xml2", "1.1.1", repos="https://cran.rstudio.com/")'
+
+# Older version of R
+RUN mkdir /home/R
+RUN apt-get install -y wget
+RUN wget --output-document=/home/R/R-3.5.3.tar.gz http://cran.stat.auckland.ac.nz/src/base/R-3/R-3.5.3.tar.gz 
+RUN cd /home/R && tar zxf R-3.5.3.tar.gz
+# Building R from source
+RUN apt-get update && apt-get install -y r-base-dev texlive-full libcairo2-dev 
+RUN cd /home/R/R-3.5.3 && ./configure 
+RUN cd /home/R/R-3.5.3 && make
+
+# R packages used in examples
+RUN Rscript -e 'install.packages(c("magick", "pdftools", "ssh", "stevedore"))'
+RUN Rscript -e 'install.packages(c("gridBezier", "XML", "png"))'
+RUN apt-get install -y \
+    texlive-binaries
+RUN Rscript -e 'install.packages("metapost")'
+
+# Repeat for older version of R
+# R packages used in examples
+RUN /home/R/R-3.5.3/bin/Rscript -e 'install.packages(c("magick", "pdftools", "ssh", "stevedore"), repos="https://cran.stat.auckland.ac.nz")'
+RUN /home/R/R-3.5.3/bin/Rscript -e 'install.packages("gridBezier", repos="https://cran.stat.auckland.ac.nz")'
+
+# Using COPY will update (invalidate cache) if the tar ball has been modified!
+COPY gdiff_0.1-0.tar.gz /tmp/
+RUN R CMD INSTALL /tmp/gdiff_0.1-0.tar.gz
+# To be replace with things like ...
+## RUN Rscript -e 'library(devtools); install_github("pmur002/gdiff@v0.1.0")'
+
+# Repeat for older version of R
+# Using COPY will update (invalidate cache) if the tar ball has been modified!
+COPY gdiff_0.1-0.tar.gz /tmp/
+RUN /home/R/R-3.5.3/bin/R CMD INSTALL /tmp/gdiff_0.1-0.tar.gz
+# To be replaced with things like ...
+## RUN /home/R/R-3.5.3/bin/Rscript -e 'library(devtools); install_github("pmur002/gdiff@v0.1-0")'
+
+# Modify ghostscript policy so that can convert PDF to PNG
+RUN sed -i 's/<policy domain="coder" rights="none" pattern="PDF"/<policy domain="coder" rights="read|write" pattern="PDF"/' /etc/ImageMagick-6/policy.xml
