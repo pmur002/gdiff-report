@@ -113,7 +113,7 @@
     </p>
     <p class="date">
     Version 1:
-Thursday 21 November 2019
+Sunday 05 January 2020
   </p>
 
 
@@ -130,7 +130,7 @@ Thursday 21 November 2019
     Visual testing is essential for checking that code is producing the
     correct graphical output. The goal of the 'gdiff' package
     is to support a wide range of testing scenarios, including 
-    testing output between different versions of R.
+    testing graphical output between different versions of R.
   </p>
     <div>
       <h2>Table of Contents:</h2>
@@ -191,7 +191,7 @@ Thursday 21 November 2019
     When the output from code is graphical, one way that
     we can compare a control image
     with a test image is by comparing raster versions of the two images
-    (to see whether any pixels differ).
+    to see whether any pixels differ.
   </p>
     <p>
     The following code shows a manual example of this process.
@@ -265,8 +265,7 @@ Thursday 21 November 2019
     can be performed.  Another possibility is to reduce image files to
     a unique "fingerprint", through the use of a hashing function, 
     and then compare image fingerprints.
-    This report focuses on pixel-based comparisons, but that is not a
-    critical feature of the approach that we have taken.
+    This report focuses on pixel-based comparisons.
   </p>
     <p>
     This report describes the 'gdiff' package (<a href="#pkg:gdiff">Murrell, 2019a</a>)
@@ -299,7 +298,7 @@ Thursday 21 November 2019
     'vtest'
     (<a href="#pkg:vtest">Chang, 2019</a>),
     and 'visualTest'
-    (<a href="#pkg:visualTest"></a>),
+    (<a href="#pkg:visualTest">Campbell and Csardi, 2019</a>),
     but the aim of the 'gdiff' package is to support a broader range
     of testing scenarios than any of those packages.
     A detailed comparison of 'gdiff' with other R packages will be made
@@ -334,6 +333,7 @@ Thursday 21 November 2019
     function, <code>f</code>, that generates a single plot and
     the output from that function is generated in a single
     file in a directory called <code>"Control"</code>.  The result
+    of the function call
     is a character vector of the files that were generated.
   </p>
 <div class="chunk" id="unnamed-chunk-9"><div class="rcode"><div class="source"><pre class="knitr r"><span class="hl kwd">library</span><span class="hl std">(gdiff)</span>
@@ -352,7 +352,8 @@ Thursday 21 November 2019
     file in the call
     to <code>gdiffOutput</code>.
     In the code below, we change the name used for the output file to 
-    <code>"fun"</code>.  A numeric suffix is also appended automatically.
+    <code>"fun"</code>.  A numeric suffix is also appended to the 
+    output file name automatically.
   </p>
 <div class="chunk" id="unnamed-chunk-11"><div class="rcode"><div class="source"><pre class="knitr r"><span class="hl kwd">gdiffOutput</span><span class="hl std">(f,</span> <span class="hl str">&quot;Control&quot;</span><span class="hl std">,</span> <span class="hl kwc">name</span><span class="hl std">=</span><span class="hl str">&quot;fun&quot;</span><span class="hl std">)</span>
 </pre></div>
@@ -406,8 +407,6 @@ Thursday 21 November 2019
     <p>
     By default, the directory in which to generate output files
     is created if it does not exist and emptied if it does exist.
-  </p>
-    <p>
     Specifying <code>clean=FALSE</code> means that an existing
     output directory will not be emptied.  However, this is not allowed
     if the directory already contains 'gdiff' output.
@@ -434,10 +433,10 @@ Thursday 21 November 2019
     the range of testing scenarios to include different graphics devices.
     The options
     are currently 
-    <code>pngDevice()</code>,
-    <code>pdfDevice()</code>,
-    <code>cario_pdf_device()</code>, and
-    <code>postscriptDevice()</code>.  The following code generates
+    <code>pngDevice</code>,
+    <code>pdfDevice</code>,
+    <code>cario_pdf_device</code>, and
+    <code>postscriptDevice</code>.  The following code generates
     output on a  PDF device.
   </p>
 <div class="chunk" id="unnamed-chunk-16"><div class="rcode"><div class="source"><pre class="knitr r"><span class="hl kwd">gdiffOutput</span><span class="hl std">(f,</span> <span class="hl str">&quot;Control&quot;</span><span class="hl std">,</span> <span class="hl kwc">device</span><span class="hl std">=</span><span class="hl kwd">pdfDevice</span><span class="hl std">())</span>
@@ -474,8 +473,8 @@ Thursday 21 November 2019
 </div></div>
     <p>
     The <code>libPaths</code> argument to the <code>currentSession</code>
-    function can be specified to 
-    add a directory from which packages will be loaded when generating
+    function can be used to specify
+    a directory from which packages will be loaded when generating
     output.  This expands the range of testing scenarios to
     allow the same code to be tested on different
     versions of a package (and its dependencies).
@@ -598,7 +597,7 @@ Thursday 21 November 2019
     and interactions between package versions, R versions, and
     operating system platforms.
   </p>
-    <p>
+    <p><a name="dockerSession"></a>
     The following code repeats the <code>axis</code> example,
     but this time we generate the test output in a docker container
     that has R version 3.6.1 installed.
@@ -619,7 +618,7 @@ Thursday 21 November 2019
 </pre></div>
 </div></div>
     <p>
-    This sort of "remote" output generation requires some set up, for example
+    This sort of "remote" output generation requires some set up.  For example,
     the 'gdiff' package at least must be installed on the remote
     system or the docker image, and of course R itself must also be installed.
   </p>
@@ -681,7 +680,7 @@ Thursday 21 November 2019
       be compared.
     </li>
       <li>
-      Images are the same if PNG versions of the image are identical
+      Images are the same if PNG versions of the images are identical
       based on per-pixel comparison.
     </li>
     </ol>
@@ -739,6 +738,9 @@ Thursday 21 November 2019
     the examples in this section will use <code>gdiff</code>
     because it makes it easier to set up
     the output that we want to compare.
+    The following code uses the function <code>f</code> to
+    generate control output and test output and compare
+    the resulting output files.
   </p>
 <div class="chunk" id="unnamed-chunk-32"><div class="rcode"><div class="source"><pre class="knitr r"><span class="hl kwd">gdiff</span><span class="hl std">(f)</span>
 </pre></div>
@@ -775,6 +777,10 @@ Thursday 21 November 2019
     generating control output and one for test output.  It is also
     possible to specify <code>NULL</code>, in which case no output
     is generated (and the output directory is not cleaned).
+    We have to specify a <code>name</code> in the call to 
+    <code>gdiff</code> in this case because we have provided a 
+    list of functions to generate output (so <code>gdiff</code> cannot 
+    generate output file names by itself).
   </p>
 <div class="chunk" id="unnamed-chunk-34"><div class="rcode"><div class="source"><pre class="knitr r"><span class="hl kwd">gdiff</span><span class="hl std">(</span><span class="hl kwd">list</span><span class="hl std">(</span><span class="hl kwc">control</span><span class="hl std">=f,</span> <span class="hl kwc">test</span><span class="hl std">=</span><span class="hl kwa">NULL</span><span class="hl std">),</span> <span class="hl kwc">name</span><span class="hl std">=</span><span class="hl str">&quot;f&quot;</span><span class="hl std">)</span>
 </pre></div>
@@ -839,6 +845,9 @@ Thursday 21 November 2019
     <p>
     The images that were generated by the code above are shown below,
     in the order control, test, and comparison.
+    This demonstrates the slight difference between the X-Spline approximation
+    to a Bezier curve that <code>grid.bezier</code> produces
+    and the true Bezier curve that <code>grid.Bezier</code> produces.
   </p>
     <p>
       <img src="bezierControl/bezier-001.png" class="example">
@@ -853,15 +862,22 @@ Thursday 21 November 2019
   </p>
 <div class="chunk" id="unnamed-chunk-38"><div class="rcode"><div class="source"><pre class="knitr r"><span class="hl kwd">gdiff</span><span class="hl std">(f,</span>
       <span class="hl kwc">device</span><span class="hl std">=</span><span class="hl kwd">list</span><span class="hl std">(</span><span class="hl kwc">control</span><span class="hl std">=</span><span class="hl kwd">pdfDevice</span><span class="hl std">(),</span>
-                  <span class="hl kwc">test</span><span class="hl std">=</span><span class="hl kwd">cairo_pdf_device</span><span class="hl std">(</span><span class="hl kwc">suffix</span><span class="hl std">=</span><span class="hl str">&quot;.pdf&quot;</span><span class="hl std">)))</span>
+                  <span class="hl kwc">test</span><span class="hl std">=</span><span class="hl kwd">cairo_pdf_device</span><span class="hl std">(</span><span class="hl kwc">suffix</span><span class="hl std">=</span><span class="hl str">&quot;.pdf&quot;</span><span class="hl std">,</span> <span class="hl kwc">bg</span><span class="hl std">=</span><span class="hl str">&quot;transparent&quot;</span><span class="hl std">)))</span>
 </pre></div>
 <div class="output"><pre class="knitr r">  
   Files that differ [1/1]
   ----------------------------------------------------------------------------------------------------
-  Control/f-001.pdf differs from Test/f-001.pdf (Compare/f-001.pdf.png [253448])
+  Control/f-001.pdf differs from Test/f-001.pdf (Compare/f-001.pdf.png [496])
 </pre></div>
 </div></div>
 
+    <p>
+    The small differences that show up here come from small differences 
+    in fonts (Helvetica for the standard PDF device versus
+    TeXGyreHeros for the Cairo PDF device, plus the fact that the
+    standard PDF device actually draws the data symbol using the
+    ZapfDingbats font).
+  </p>
     <p>
       <img src="deviceControl/f-001.png" class="example">
       <img src="deviceTest/f-001.png" class="example">
@@ -875,51 +891,60 @@ Thursday 21 November 2019
     with the output generated by the 'metapost' R package 
     (<a href="#pkg:metapost">Murrell, 2019b</a>).
     This example involves multiple steps:
-    we generate MetaPost output manually and convert that output
-    to a PDF format with a specific name in a specific directory;
+    we generate MetaPost output manually,
+    with a specific name in a specific directory;
     then we call
     <code>gdiff</code> with <code>list(control=NULL, test=f)</code> 
     so that we do not
-    generate any control output, <code>controlDir=MetaPostControl</code> to
+    generate any control output, 
+    <code>name="scurve"</code> so that the test file has the same
+    name as the control file,
+    <code>controlDir=MetaPostControl</code> to
     specify where the control output is located,
+    <code>device=postscritpDevice</code> so that the test output
+    is generated in the same format as the control output,
     <code>clean=list(control=FALSE, test=TRUE,
     compare=TRUE)</code> so that we do not clean the control directory,
-    and the comparison occurs between the manually-generated PDF and
-    the PDF that gets generated by <code>f</code>.
+    and the comparison occurs between the manually-generated PostScript file
+    and the PostScript file that gets generated by <code>f</code>.
   </p>
-<div class="chunk" id="unnamed-chunk-40"><div class="rcode"><div class="source"><pre class="knitr r"><span class="hl kwd">library</span><span class="hl std">(metapost)</span>
+
+<div class="chunk" id="unnamed-chunk-41"><div class="rcode"><div class="source"><pre class="knitr r"><span class="hl kwd">library</span><span class="hl std">(metapost)</span>
 <span class="hl kwd">options</span><span class="hl std">(</span><span class="hl kwc">metapost.units</span><span class="hl std">=</span><span class="hl str">&quot;in&quot;</span><span class="hl std">)</span>
 <span class="hl std">scurve</span> <span class="hl kwb">&lt;-</span> <span class="hl kwd">knot</span><span class="hl std">(</span><span class="hl num">0</span><span class="hl std">,</span> <span class="hl num">0</span><span class="hl std">)</span> <span class="hl opt">+</span> <span class="hl kwd">dir</span><span class="hl std">(</span><span class="hl num">0</span><span class="hl std">)</span> <span class="hl opt">+</span> <span class="hl kwd">dir</span><span class="hl std">(</span><span class="hl num">0</span><span class="hl std">)</span> <span class="hl opt">+</span> <span class="hl kwd">knot</span><span class="hl std">(</span><span class="hl num">1</span><span class="hl std">,</span> <span class="hl num">1</span><span class="hl std">)</span>
 <span class="hl kwd">metapost</span><span class="hl std">(scurve,</span> <span class="hl str">&quot;scurve.mp&quot;</span><span class="hl std">)</span>
 <span class="hl kwd">mpost</span><span class="hl std">(</span><span class="hl str">&quot;scurve.mp&quot;</span><span class="hl std">,</span> <span class="hl kwc">template</span><span class="hl std">=</span><span class="hl str">&quot;%j.ps&quot;</span><span class="hl std">)</span>
 <span class="hl std">MetaPostDir</span> <span class="hl kwb">&lt;-</span> <span class="hl str">&quot;MetaPostControl&quot;</span>
 <span class="hl kwd">dir.create</span><span class="hl std">(MetaPostDir,</span> <span class="hl kwc">showWarnings</span><span class="hl std">=</span><span class="hl num">FALSE</span><span class="hl std">)</span>
-<span class="hl kwd">system</span><span class="hl std">(</span><span class="hl kwd">paste0</span><span class="hl std">(</span><span class="hl str">&quot;gs -o &quot;</span><span class="hl std">,</span> <span class="hl kwd">file.path</span><span class="hl std">(MetaPostDir,</span> <span class="hl str">&quot;scurve-001.pdf&quot;</span><span class="hl std">),</span>
-              <span class="hl str">&quot; -sDEVICE=pdfwrite -g720x720 -dPDFFitPage scurve.ps &quot;</span><span class="hl std">))</span>
+<span class="hl kwd">system</span><span class="hl std">(</span><span class="hl kwd">paste0</span><span class="hl std">(</span><span class="hl str">&quot;cp scurve.ps &quot;</span><span class="hl std">,</span> <span class="hl kwd">file.path</span><span class="hl std">(MetaPostDir,</span> <span class="hl str">&quot;scurve-001.ps&quot;</span><span class="hl std">)))</span>
 <span class="hl std">f</span> <span class="hl kwb">&lt;-</span> <span class="hl kwa">function</span><span class="hl std">() {</span>
     <span class="hl kwd">grid.metapost</span><span class="hl std">(scurve)</span>
 <span class="hl std">}</span>
 <span class="hl kwd">gdiff</span><span class="hl std">(</span><span class="hl kwd">list</span><span class="hl std">(</span><span class="hl kwc">control</span><span class="hl std">=</span><span class="hl kwa">NULL</span><span class="hl std">,</span> <span class="hl kwc">test</span><span class="hl std">=f),</span>
       <span class="hl kwc">name</span><span class="hl std">=</span><span class="hl str">&quot;scurve&quot;</span><span class="hl std">,</span>
       <span class="hl kwc">controlDir</span><span class="hl std">=MetaPostDir,</span>
-      <span class="hl kwc">device</span><span class="hl std">=</span><span class="hl kwd">pdfDevice</span><span class="hl std">(</span><span class="hl kwc">width</span><span class="hl std">=</span><span class="hl num">1</span><span class="hl std">,</span> <span class="hl kwc">height</span><span class="hl std">=</span><span class="hl num">1</span><span class="hl std">),</span>
+      <span class="hl kwc">device</span><span class="hl std">=</span><span class="hl kwd">postscriptDevice</span><span class="hl std">(</span><span class="hl kwc">width</span><span class="hl std">=</span><span class="hl num">1</span><span class="hl std">,</span> <span class="hl kwc">height</span><span class="hl std">=</span><span class="hl num">1</span><span class="hl std">,</span> <span class="hl kwc">paper</span><span class="hl std">=</span><span class="hl str">&quot;special&quot;</span><span class="hl std">,</span>
+                              <span class="hl kwc">horizontal</span><span class="hl std">=</span><span class="hl num">FALSE</span><span class="hl std">),</span>
       <span class="hl kwc">clean</span><span class="hl std">=</span><span class="hl kwd">list</span><span class="hl std">(</span><span class="hl kwc">control</span><span class="hl std">=</span><span class="hl num">FALSE</span><span class="hl std">,</span> <span class="hl kwc">test</span><span class="hl std">=</span><span class="hl num">TRUE</span><span class="hl std">,</span> <span class="hl kwc">compare</span><span class="hl std">=</span><span class="hl num">TRUE</span><span class="hl std">))</span>
 </pre></div>
 <div class="output"><pre class="knitr r">  
   Files that differ [1/1]
   ----------------------------------------------------------------------------------------------------
-  MetaPostControl/scurve-001.pdf differs from Test/scurve-001.pdf (Compare/scurve-001.pdf.png [188])
-  
-  Mismatched files [1]
-  ----------------------------------------------------------------------------------------------------
-  MetaPostControl/scurve-001.png had no matching test output
+  MetaPostControl/scurve-001.ps differs from Test/scurve-001.ps (Compare/scurve-001.ps.png [216])
 </pre></div>
 </div></div>
 
     <p>
+    The results show that the default line width in R is 
+    not the same as the default line width in MetaPost
+    (in fact the default line width in MetaPost is hard for R to
+    match because it is effectively zero, or the thinnest line that
+    PostScript can produce).
+  </p>
+    <p>
       <img src="MetaPostControl/scurve-001.png" class="example">
       <img src="MetaPostTest/scurve-001.png" class="example">
-      <img src="MetaPostCompare/scurve-001.pdf.png" class="example">
+      <img src="MetaPostCompare/scurve-001.ps.png" class="example">
     </p>
     <p>
     In this final comparison example, we show that, 
@@ -927,8 +952,9 @@ Thursday 21 November 2019
     already contains 'gdiff' output, we can generate output in
     more than one directory and perform a comparison based on
     multiple control and/or test directories.
+    In this case, the output files are all (deliberately) identical.
   </p>
-<div class="chunk" id="unnamed-chunk-42"><div class="rcode"><div class="source"><pre class="knitr r"><span class="hl std">f</span> <span class="hl kwb">&lt;-</span> <span class="hl kwa">function</span><span class="hl std">()</span> <span class="hl kwd">plot</span><span class="hl std">(</span><span class="hl num">1</span><span class="hl std">)</span>
+<div class="chunk" id="unnamed-chunk-43"><div class="rcode"><div class="source"><pre class="knitr r"><span class="hl std">f</span> <span class="hl kwb">&lt;-</span> <span class="hl kwa">function</span><span class="hl std">()</span> <span class="hl kwd">plot</span><span class="hl std">(</span><span class="hl num">1</span><span class="hl std">)</span>
 <span class="hl std">g</span> <span class="hl kwb">&lt;-</span> <span class="hl kwa">function</span><span class="hl std">() {</span>
     <span class="hl kwd">plot</span><span class="hl std">(</span><span class="hl num">1</span><span class="hl std">)</span>
     <span class="hl kwd">plot</span><span class="hl std">(</span><span class="hl num">2</span><span class="hl std">)</span>
@@ -949,7 +975,14 @@ Thursday 21 November 2019
 </pre></div>
 <div class="output"><pre class="knitr r">  [1] &quot;Test2/g-001.png&quot; &quot;Test2/g-002.png&quot;
 </pre></div>
-<div class="source"><pre class="knitr r"><span class="hl kwd">gdiffCompare</span><span class="hl std">(</span><span class="hl kwd">c</span><span class="hl std">(</span><span class="hl str">&quot;Control1&quot;</span><span class="hl std">,</span> <span class="hl str">&quot;Control2&quot;</span><span class="hl std">),</span> <span class="hl kwd">c</span><span class="hl std">(</span><span class="hl str">&quot;Test1&quot;</span><span class="hl std">,</span> <span class="hl str">&quot;Test2&quot;</span><span class="hl std">),</span> <span class="hl str">&quot;Compare&quot;</span><span class="hl std">)</span>
+</div></div>
+    <p>
+    The following code shows that the <code>controlDir</code> and
+    the <code>testDir</code> arguments to <code>gdiff</code> 
+    accept multiple directories.
+  </p>
+<div class="chunk" id="unnamed-chunk-44"><div class="rcode"><div class="source"><pre class="knitr r"><span class="hl kwd">gdiffCompare</span><span class="hl std">(</span><span class="hl kwc">controlDir</span><span class="hl std">=</span><span class="hl kwd">c</span><span class="hl std">(</span><span class="hl str">&quot;Control1&quot;</span><span class="hl std">,</span> <span class="hl str">&quot;Control2&quot;</span><span class="hl std">),</span>
+             <span class="hl kwc">testDir</span><span class="hl std">=</span><span class="hl kwd">c</span><span class="hl std">(</span><span class="hl str">&quot;Test1&quot;</span><span class="hl std">,</span> <span class="hl str">&quot;Test2&quot;</span><span class="hl std">),</span> <span class="hl str">&quot;Compare&quot;</span><span class="hl std">)</span>
 </pre></div>
 <div class="output"><pre class="knitr r">  
   Identical files [3/3]
@@ -973,7 +1006,7 @@ Thursday 21 November 2019
     package provides a <code>print</code> method for this class
     that produces a simple summary of the comparison results.
   </p>
-<div class="chunk" id="unnamed-chunk-43"><div class="rcode"><div class="source"><pre class="knitr r"><span class="hl std">result</span> <span class="hl kwb">&lt;-</span> <span class="hl kwd">gdiffExamples</span><span class="hl std">(</span><span class="hl str">&quot;axis&quot;</span><span class="hl std">,</span>
+<div class="chunk" id="unnamed-chunk-45"><div class="rcode"><div class="source"><pre class="knitr r"><span class="hl std">result</span> <span class="hl kwb">&lt;-</span> <span class="hl kwd">gdiffExamples</span><span class="hl std">(</span><span class="hl str">&quot;axis&quot;</span><span class="hl std">,</span>
                         <span class="hl kwc">session</span><span class="hl std">=</span><span class="hl kwd">list</span><span class="hl std">(</span><span class="hl kwc">control</span><span class="hl std">=</span><span class="hl kwd">currentSession</span><span class="hl std">(),</span>
                                      <span class="hl kwc">test</span><span class="hl std">=</span><span class="hl kwd">localSession</span><span class="hl std">(</span><span class="hl kwc">Rpath</span><span class="hl std">=</span><span class="hl str">&quot;/home/R/R-3.5.3/bin/Rscript&quot;</span><span class="hl std">)),</span>
                         <span class="hl kwc">device</span><span class="hl std">=</span><span class="hl kwd">pngDevice</span><span class="hl std">(</span><span class="hl kwc">type</span><span class="hl std">=</span><span class="hl str">&quot;cairo&quot;</span><span class="hl std">))</span>
@@ -993,10 +1026,10 @@ Thursday 21 November 2019
 </div></div>
     <p>
     The <code>details</code> argument can be used to 
-    simplify the results output even further, which may be useful
+    simplify the output even further.  This may be useful
     when a large number of images are being compared.
   </p>
-<div class="chunk" id="unnamed-chunk-44"><div class="rcode"><div class="source"><pre class="knitr r"><span class="hl kwd">print</span><span class="hl std">(result,</span> <span class="hl kwc">detail</span><span class="hl std">=</span><span class="hl num">FALSE</span><span class="hl std">)</span>
+<div class="chunk" id="unnamed-chunk-46"><div class="rcode"><div class="source"><pre class="knitr r"><span class="hl kwd">print</span><span class="hl std">(result,</span> <span class="hl kwc">detail</span><span class="hl std">=</span><span class="hl num">FALSE</span><span class="hl std">)</span>
 </pre></div>
 <div class="output"><pre class="knitr r">  Identical files [3/3]
   Mismatched files [1]
@@ -1007,13 +1040,13 @@ Thursday 21 November 2019
     to present the results of a comparison in other ways.
     For example, the following code embeds the control, test, and
     difference images from a comparison within HTML tags for
-    inclusion in a web report.
+    inclusion in this report.
   </p>
-<div class="chunk" id="unnamed-chunk-45"><div class="rcode"><div class="source"><pre class="knitr r"><span class="hl std">f</span> <span class="hl kwb">&lt;-</span> <span class="hl kwa">function</span><span class="hl std">()</span> <span class="hl kwd">plot</span><span class="hl std">(</span><span class="hl num">1</span><span class="hl std">)</span>
+<div class="chunk" id="unnamed-chunk-47"><div class="rcode"><div class="source"><pre class="knitr r"><span class="hl std">f</span> <span class="hl kwb">&lt;-</span> <span class="hl kwa">function</span><span class="hl std">()</span> <span class="hl kwd">plot</span><span class="hl std">(</span><span class="hl num">1</span><span class="hl std">)</span>
 <span class="hl std">g</span> <span class="hl kwb">&lt;-</span> <span class="hl kwa">function</span><span class="hl std">()</span> <span class="hl kwd">plot</span><span class="hl std">(</span><span class="hl num">2</span><span class="hl std">)</span>
 </pre></div>
 </div></div>
-<div class="chunk" id="unnamed-chunk-46"><div class="rcode"><div class="source"><pre class="knitr r"><span class="hl std">result</span> <span class="hl kwb">&lt;-</span> <span class="hl kwd">gdiff</span><span class="hl std">(</span><span class="hl kwd">list</span><span class="hl std">(</span><span class="hl kwc">control</span><span class="hl std">=f,</span> <span class="hl kwc">test</span><span class="hl std">=g),</span> <span class="hl kwc">name</span><span class="hl std">=</span><span class="hl str">&quot;plot&quot;</span><span class="hl std">)</span>
+<div class="chunk" id="unnamed-chunk-48"><div class="rcode"><div class="source"><pre class="knitr r"><span class="hl std">result</span> <span class="hl kwb">&lt;-</span> <span class="hl kwd">gdiff</span><span class="hl std">(</span><span class="hl kwd">list</span><span class="hl std">(</span><span class="hl kwc">control</span><span class="hl std">=f,</span> <span class="hl kwc">test</span><span class="hl std">=g),</span> <span class="hl kwc">name</span><span class="hl std">=</span><span class="hl str">&quot;plot&quot;</span><span class="hl std">)</span>
 <span class="hl kwd">cat</span><span class="hl std">(</span><span class="hl kwd">sapply</span><span class="hl std">(result[</span><span class="hl num">1</span><span class="hl opt">:</span><span class="hl num">3</span><span class="hl std">],</span> <span class="hl kwa">function</span><span class="hl std">(</span><span class="hl kwc">x</span><span class="hl std">)</span> <span class="hl kwd">paste0</span><span class="hl std">(</span><span class="hl str">&quot;&lt;img src='&quot;</span><span class="hl std">, x,</span> <span class="hl str">&quot;'&gt;&quot;</span><span class="hl std">)))</span>
 </pre></div>
 </div></div>
@@ -1023,42 +1056,54 @@ Thursday 21 November 2019
     </h2>
     <p>
     When we generate output, the 'gdiff' package creates a
-    <code>.gdiffSession</code> file in the output directory
-    that contains information about the R session that was
+    <code>.gdiffSession</code> file in the output directory.
+    This file contains information about the R session that was
     used to generate the output.
     When we perform a comparison, this information is read in
     and included in the comparison result.
-    For the comparison we just performed above, the control output
-    was not generated by R at all, so there is no information
-    about the R session;  the test output was generated by
-    R 3.6.1.
   </p>
-<div class="chunk" id="unnamed-chunk-48"><div class="rcode"><div class="source"><pre class="knitr r"><span class="hl std">result</span><span class="hl opt">$</span><span class="hl std">controlInfo</span>
+    <p>
+    In the following code, we perform a comparison using two
+    different sessions and 
+    the resulting session information shows the different R 
+    versions being used in those two sessions.
+  </p>
+<div class="chunk" id="unnamed-chunk-50"><div class="rcode"><div class="source"><pre class="knitr r"><span class="hl std">result</span> <span class="hl kwb">&lt;-</span> <span class="hl kwd">gdiff</span><span class="hl std">(f,</span>
+                <span class="hl kwc">session</span><span class="hl std">=</span><span class="hl kwd">list</span><span class="hl std">(</span><span class="hl kwc">control</span><span class="hl std">=</span><span class="hl kwd">localSession</span><span class="hl std">(</span><span class="hl kwc">Rpath</span><span class="hl std">=</span><span class="hl str">&quot;/home/R/R-3.5.3/bin/Rscript&quot;</span><span class="hl std">),</span>
+                             <span class="hl kwc">test</span><span class="hl std">=</span><span class="hl kwd">dockerSession</span><span class="hl std">(</span><span class="hl str">&quot;pmur002/gdiff-test&quot;</span><span class="hl std">)),</span>
+                <span class="hl kwc">device</span><span class="hl std">=</span><span class="hl kwd">pngDevice</span><span class="hl std">(</span><span class="hl kwc">type</span><span class="hl std">=</span><span class="hl str">&quot;cairo&quot;</span><span class="hl std">))</span>
+</pre></div>
+<div class="output"><pre class="knitr r">  E&gt; Loading required package: gdiff
+</pre></div>
+</div></div>
+<div class="chunk" id="unnamed-chunk-51"><div class="rcode"><div class="source"><pre class="knitr r"><span class="hl std">result</span><span class="hl opt">$</span><span class="hl std">controlInfo</span>
 </pre></div>
 <div class="output"><pre class="knitr r">  [[1]]
   [[1]]$info
-  R version 3.6.1 (2019-07-05)
+  R version 3.5.3 (2019-03-11)
   Platform: x86_64-pc-linux-gnu (64-bit)
   Running under: Ubuntu 16.04.3 LTS
   
   Matrix products: default
-  BLAS:   /usr/lib/libblas/libblas.so.3.6.0
-  LAPACK: /usr/lib/lapack/liblapack.so.3.6.0
+  BLAS:   /home/R/R-3.5.3/lib/libRblas.so
+  LAPACK: /home/R/R-3.5.3/lib/libRlapack.so
   
+  Random number generation:
+   RNG:     
+   Normal:  
+   Sample:  
+   
   locale:
   [1] C
   
   attached base packages:
-  [1] grid      stats     graphics  grDevices utils     datasets  methods   base     
+  [1] stats     graphics  grDevices utils     datasets  methods   base     
   
   other attached packages:
-  [1] metapost_1.0-6   gridBezier_1.1-1 png_0.1-7        XML_3.98-1.20    gdiff_0.1-0     
-  [6] magick_2.2       knitr_1.26      
+  [1] gdiff_0.1-0
   
   loaded via a namespace (and not attached):
-   [1] Rcpp_1.0.3      pdftools_2.3    jsonlite_1.6    magrittr_1.5    evaluate_0.14   highr_0.8      
-   [7] stringi_1.4.3   curl_4.2        grImport_0.9-2  qpdf_1.1        tools_3.6.1     stringr_1.4.0  
-  [13] yaml_2.2.0      xfun_0.11       parallel_3.6.1  compiler_3.6.1  askpass_1.1     stevedore_0.9.1
+  [1] compiler_3.5.3 parallel_3.5.3 Rcpp_1.0.3     pdftools_2.3   qpdf_1.1       askpass_1.1   
   
   [[1]]$count
   [1] 1
@@ -1079,16 +1124,13 @@ Thursday 21 November 2019
   [1] C
   
   attached base packages:
-  [1] grid      stats     graphics  grDevices utils     datasets  methods   base     
+  [1] stats     graphics  grDevices utils     datasets  methods   base     
   
   other attached packages:
-  [1] metapost_1.0-6   gridBezier_1.1-1 png_0.1-7        XML_3.98-1.20    gdiff_0.1-0     
-  [6] magick_2.2       knitr_1.26      
+  [1] gdiff_0.1-0
   
   loaded via a namespace (and not attached):
-   [1] Rcpp_1.0.3      pdftools_2.3    jsonlite_1.6    magrittr_1.5    evaluate_0.14   highr_0.8      
-   [7] stringi_1.4.3   curl_4.2        grImport_0.9-2  qpdf_1.1        tools_3.6.1     stringr_1.4.0  
-  [13] yaml_2.2.0      xfun_0.11       parallel_3.6.1  compiler_3.6.1  askpass_1.1     stevedore_0.9.1
+  [1] compiler_3.6.1 parallel_3.6.1 Rcpp_1.0.2     pdftools_2.2   qpdf_1.1       askpass_1.1   
   
   [[1]]$count
   [1] 1
@@ -1101,13 +1143,13 @@ Thursday 21 November 2019
     We can generate control and test output on a range of devices
     by specifying different values for the <code>device</code> 
     argument to the various 'gdiff' functions.  A few common graphics
-    devices are already support (e.g., PNG and PDF), but the range
+    devices are already supported (e.g., PNG and PDF), but the range
     can easily be expanded by defining support for a new graphics device.
   </p>
     <p>
-    The main device function should call the <code>gdiffDevice</code> 
-    to define a new 
-    output device.  This function takes a <code>name</code> for the 
+    A new device must be a "gdiffDevice" object, as generated by the
+    <code>gdiffDevice</code> function.
+    This function takes a <code>name</code> for the 
     device, a <code>suffix</code> (which defaults to the <code>name</code>)
     to be used on output files generated by the device, and two
     functions, <code>open</code> and <code>close</code>.
@@ -1117,10 +1159,41 @@ Thursday 21 November 2019
     The <code>close</code> function defaults to a call to <code>dev.off</code>.
   </p>
     <p>
-    The code below shows the definition of an SVG device.  The predefined
+    The code below shows the definition of a very basic SVG device.  
+  </p>
+<div class="chunk" id="unnamed-chunk-52"><div class="rcode"><div class="source"><pre class="knitr r"><span class="hl kwd">gdiffDevice</span><span class="hl std">(</span><span class="hl str">&quot;svg&quot;</span><span class="hl std">,</span>
+            <span class="hl kwc">open</span><span class="hl std">=</span><span class="hl kwa">function</span><span class="hl std">(</span><span class="hl kwc">name</span><span class="hl std">) {</span>
+                <span class="hl kwd">svg</span><span class="hl std">()</span>
+            <span class="hl std">})</span>
+</pre></div>
+<div class="output"><pre class="knitr r">  $name
+  [1] &quot;svg&quot;
+  
+  $suffix
+  [1] &quot;svg&quot;
+  
+  $open
+  function(name) {
+                  svg()
+              }
+  
+  $close
+  function (dir, name) 
+  dev.off()
+  &lt;environment: 0x3018438&gt;
+  
+  attr(,&quot;class&quot;)
+  [1] &quot;gdiffDevice&quot;
+</pre></div>
+</div></div>
+    <p>
+    The predefined devices provide convenience functions that allow for
+    parameters to be passed to the <code>open</code> function.
+    The code below shows the definition of an SVG device convenience function.  
+    The predefined
     output devices in the 'gdiff' package provide other examples.
   </p>
-<div class="chunk" id="unnamed-chunk-49"><div class="rcode"><div class="source"><pre class="knitr r"><span class="hl std">svgDevice</span> <span class="hl kwb">&lt;-</span> <span class="hl kwa">function</span><span class="hl std">(</span><span class="hl kwc">...</span><span class="hl std">) {</span>
+<div class="chunk" id="unnamed-chunk-53"><div class="rcode"><div class="source"><pre class="knitr r"><span class="hl std">svgDevice</span> <span class="hl kwb">&lt;-</span> <span class="hl kwa">function</span><span class="hl std">(</span><span class="hl kwc">...</span><span class="hl std">) {</span>
     <span class="hl kwd">gdiffDevice</span><span class="hl std">(</span><span class="hl str">&quot;svg&quot;</span><span class="hl std">,</span>
                 <span class="hl kwc">open</span><span class="hl std">=</span><span class="hl kwa">function</span><span class="hl std">(</span><span class="hl kwc">name</span><span class="hl std">) {</span>
                     <span class="hl kwd">svg</span><span class="hl std">(</span><span class="hl kwd">paste0</span><span class="hl std">(name,</span> <span class="hl str">&quot;-%03d.svg&quot;</span><span class="hl std">), ...)</span>
@@ -1128,7 +1201,10 @@ Thursday 21 November 2019
 <span class="hl std">}</span>
 </pre></div>
 </div></div>
-<div class="chunk" id="unnamed-chunk-50"><div class="rcode"><div class="source"><pre class="knitr r"><span class="hl std">f</span> <span class="hl kwb">&lt;-</span> <span class="hl kwa">function</span><span class="hl std">()</span> <span class="hl kwd">plot</span><span class="hl std">(</span><span class="hl num">1</span><span class="hl std">)</span>
+    <p>
+    The following code shows the new <code>svgDevice</code> in action.
+  </p>
+<div class="chunk" id="unnamed-chunk-54"><div class="rcode"><div class="source"><pre class="knitr r"><span class="hl std">f</span> <span class="hl kwb">&lt;-</span> <span class="hl kwa">function</span><span class="hl std">()</span> <span class="hl kwd">plot</span><span class="hl std">(</span><span class="hl num">1</span><span class="hl std">)</span>
 <span class="hl kwd">gdiff</span><span class="hl std">(f,</span> <span class="hl kwc">device</span><span class="hl std">=</span><span class="hl kwd">svgDevice</span><span class="hl std">())</span>
 </pre></div>
 <div class="output"><pre class="knitr r">  
@@ -1139,10 +1215,11 @@ Thursday 21 November 2019
 </div></div>
     <p>
     It is also possible to define a new type of 'gdiff' session.
-    The main session function should call the <code>gdiffSession</code>
-    function to generate an R object representing the session.
+    A session must be a "gdiffSession" object, as generated
+    by the <code>gdiffSession</code> function.  The only argument 
+    to that function is a class for the new type of session.
     A <code>generateOutput</code> method should then be written
-    for that class of R object.  This function is responsible for
+    for that new session class.  This function is responsible for
     generating output files;  it will typically perform
     some set up steps and clean up steps and call 
     <code>gdiffGenerateOutput</code> to generate the output files.
@@ -1174,15 +1251,17 @@ Thursday 21 November 2019
     generator".  This is a function that creates a named list of functions.
     This function generator is passed, via the <code>generateOutput</code>
     method for the 'gdiff' session,
-    all the way in to <code>gdiffGenerateOutput</code>.  There it is called
-    to generate a named list of functions and then each function is called
+    all the way in to <code>gdiffGenerateOutput</code>.  
+    The function generator is called
+    to generate a named list of functions and then each function in that list
+    is called
     on each graphics device to generate output files.
   </p>
     <p>
     A simple example of a function generator is the one used by 
     <code>function</code> methods of <code>gdiff</code> and
     <code>gdiffOutput</code>.  These just take the function argument
-    provided and store it in a list, with the appropriate name.
+    that they are provided and store it in a list, with the appropriate name.
   </p>
     <p>
     A more complex function generator example is the one used by
@@ -1211,7 +1290,7 @@ Thursday 21 November 2019
   </p>
     <p>
     The 'vdiffr' package integrates with the 'testthat' package
-    (<a href="#pkg:testthat"></a>)
+    (<a href="#pkg:testthat">Wickham, 2011</a>)
     to add visual testing.
     The 'gdiff' package supports a wider range of testing scenarios
     than 'vdiffr', including comparing between R versions, and 'gdiff'
@@ -1236,7 +1315,7 @@ Thursday 21 November 2019
     raster versions of images, though it takes a very different
     approach to tracking output files and performing comparisons.
     The main limitation of the 'vtest' package compared to 'gdiff'
-    is that it appears to
+    is that it currently appears to
     only work with 'ggplot2' images and PDF output.
   </p>
     <h3>
@@ -1247,13 +1326,11 @@ Thursday 21 November 2019
     by generating a set of control images within the package, then
     running tests that generate test images and compare them with 
     the control images.
-  </p>
-    <p>
-    However <code>R CMD check</code>
+    However, <code>R CMD check</code>
     is just one testing scenario (where we generate results from
     one version of R and one version of a package against output
     that was generated with previous version of a package and some
-    unknown version of R).  The 'gdiff' package aims to support a
+    unknown version of R).  The 'gdiff' package aims to also support a
     wider range of testing scenarios.
   </p>
     <h3>Future work</h3>
@@ -1308,14 +1385,15 @@ Thursday 21 November 2019
       The Docker image for the container is available from
       <a href="https://hub.docker.com/r/pmur002/gdiff-report/">Docker Hub</a>;
       alternatively, the image can be rebuilt from its 
-      <a href="Dockerfile-gdiff-report">Dockerfile</a>.
+      <a href="Dockerfiles/Dockerfile-gdiff-report">Dockerfile</a>.
     </li>
       <li>
-      The <code>dockerSession</code> example made use of a 
+      The <a href="#dockerSession"><code>dockerSession</code> example</a> 
+      made use of a 
       Docker image that is available from 
       <a href="https://hub.docker.com/r/pmur002/gdiff-test/">Docker Hub</a>
       or via its 
-      <a href="Dockerfile-gdiff-test">Dockerfile</a>.
+      <a href="Dockerfiles/Dockerfile-gdiff-test">Dockerfile</a>.
     </li>
     </ul>
     <h2>How to cite this report</h2>

@@ -70,3 +70,4 @@ RUN /home/R/R-3.5.3/bin/R CMD INSTALL /tmp/gdiff_0.1-0.tar.gz
 
 # Modify ghostscript policy so that can convert PDF to PNG
 RUN sed -i 's/<policy domain="coder" rights="none" pattern="PDF"/<policy domain="coder" rights="read|write" pattern="PDF"/' /etc/ImageMagick-6/policy.xml
+RUN sed -i 's/<policy domain="coder" rights="none" pattern="PS"/<policy domain="coder" rights="read|write" pattern="PS"/' /etc/ImageMagick-6/policy.xml
