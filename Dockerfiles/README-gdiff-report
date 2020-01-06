@@ -1,9 +1,6 @@
 
 + Created docker image with (NOTE ONLY lowercase in image tag) ...
 
-  # Bit of setup to get local copies of in-development pacakges
-  # cp ../../Rgdiff/gdiff_0.1-0.tar.gz .
-
   sudo docker build -f Dockerfiles/Dockerfile-gdiff-report -t pmur002/gdiff-report .
 
 + To test image interactively 

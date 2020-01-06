@@ -56,17 +56,18 @@ RUN /home/R/R-3.5.3/bin/Rscript -e 'install.packages(c("magick", "pdftools", "ss
 RUN /home/R/R-3.5.3/bin/Rscript -e 'install.packages("gridBezier", repos="https://cran.stat.auckland.ac.nz")'
 
 # Using COPY will update (invalidate cache) if the tar ball has been modified!
-COPY gdiff_0.1-0.tar.gz /tmp/
-RUN R CMD INSTALL /tmp/gdiff_0.1-0.tar.gz
+## COPY gdiff_0.1-0.tar.gz /tmp/
+## RUN R CMD INSTALL /tmp/gdiff_0.1-0.tar.gz
 # To be replace with things like ...
-## RUN Rscript -e 'library(devtools); install_github("pmur002/gdiff@v0.1.0")'
+RUN Rscript -e 'library(devtools); install_github("pmur002/gdiff@v0.1-0")'
 
 # Repeat for older version of R
 # Using COPY will update (invalidate cache) if the tar ball has been modified!
-COPY gdiff_0.1-0.tar.gz /tmp/
-RUN /home/R/R-3.5.3/bin/R CMD INSTALL /tmp/gdiff_0.1-0.tar.gz
+## COPY gdiff_0.1-0.tar.gz /tmp/
+## RUN /home/R/R-3.5.3/bin/R CMD INSTALL /tmp/gdiff_0.1-0.tar.gz
 # To be replaced with things like ...
-## RUN /home/R/R-3.5.3/bin/Rscript -e 'library(devtools); install_github("pmur002/gdiff@v0.1-0")'
+RUN /home/R/R-3.5.3/bin/Rscript -e 'install.packages("devtools", repos="https://cran.rstudio.com/")'
+RUN /home/R/R-3.5.3/bin/Rscript -e 'library(devtools); install_github("pmur002/gdiff@v0.1-0")'
 
 # Modify ghostscript policy so that can convert PDF to PNG
 RUN sed -i 's/<policy domain="coder" rights="none" pattern="PDF"/<policy domain="coder" rights="read|write" pattern="PDF"/' /etc/ImageMagick-6/policy.xml
